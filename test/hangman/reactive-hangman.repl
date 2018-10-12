@@ -1,0 +1,96 @@
+(require '[cognitect.transcriptor :refer (check!)])
+
+(require '[hangman.reactive-hangman :refer :all])
+
+(comment "win case")
+
+(-> (init-game-data "bigbear" 7)
+    (prefill-letters ["a"])
+    (handle-new-event [:guess "b"])
+    (handle-new-event [:guess "o"])
+    (handle-new-event [:guess "i"])
+    (handle-new-event [:guess "g"])
+    (handle-new-event [:guess "e"])
+    (handle-new-event [:guess "y"])
+    (handle-new-event [:time-tick])
+    (handle-new-event [:guess "r"])
+    (handle-new-event [:time-tick])
+    update-status
+    game-state)
+
+(check! #{{:status :won
+           :selected-letters ["a" "b" "o" "i" "g" "e" "y" "r"]
+           :life-left 5
+           :secret-word-length 7
+           :known-secret-word "bigbear"
+           :time-left 4}})
+
+
+
+(comment "lose case")
+
+(-> (init-game-data "bigbear" 7)
+    (prefill-letters ["a"])
+    (handle-new-event [:guess "b"])
+    (handle-new-event [:guess "b"])
+    (handle-new-event [:guess "o"])
+    (handle-new-event [:guess "o"])
+    (handle-new-event [:guess "e"])
+    (handle-new-event [:guess "n"])
+    (handle-new-event [:guess "u"])
+    (handle-new-event [:guess "t"])
+    (handle-new-event [:guess "z"])
+    (handle-new-event [:guess "x"])
+    (handle-new-event [:guess "v"])
+    update-status
+    game-state)
+
+(check! #{{:status :lose,
+           :selected-letters ["a" "b" "o" "e" "n" "u" "t" "z" "x" "v"],
+           :life-left 0,
+           :secret-word-length 7,
+           :known-secret-word "b__bea_"
+           :time-left 5}})
+
+
+
+(comment "reactive")
+
+(require '[clojure.spec.alpha :as s]
+         '[clojure.core.async :as async :refer [chan to-chan take! go >!]])
+
+(create-ns 'hangman.reactive-hangman.check.async-win)
+(alias 'chk1 'hangman.reactive-hangman.check.async-win)
+
+(def secret-word "bigbear")
+(def events ["b" :t :t "o" :t "i" :t "g" :t "a" :t :t :t :t :t :t :t :t "e" :t "y" :t "r"])
+
+(s/def ::chk1/game (s/keys :req-un [::chk1/status :chk1/secret-word-length ::chk1/known-secret-word
+                                    ::chk1/selected-letters ::chk1/life-left]))
+(s/def ::chk1/status #{:won})
+(s/def ::chk1/secret-word-length #{(count secret-word)})
+(s/def ::chk1/known-secret-word #{secret-word})
+(s/def ::chk1/selected-letters (fn [lts] (every? (set lts) (vectorize secret-word))))
+(s/def ::chk1/life-left pos-int?)
+
+(let [letters-chan (chan)
+      time-chan (chan)
+      out-chan (reactive-hangman secret-word letters-chan time-chan)]
+  (go
+    (doseq [e events]
+      (cond
+        (string? e) (>! letters-chan e)
+        (= :t e) (>! time-chan 1))))
+  (take! (async/into [] out-chan)
+         (fn [games] (check! ::chk1/game (last games)))))
+
+
+
+(defn run-this-file
+  []
+  (require 'cognitect.transcriptor)
+  (defn tmp [])
+  (cognitect.transcriptor/run (-> #'tmp meta :file)))
+
+(comment
+  (run-this-file))
