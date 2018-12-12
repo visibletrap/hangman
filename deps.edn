@@ -1,6 +1,6 @@
-{:deps {org.clojure/core.async {:mvn/version "0.4.474"}
+{:deps {org.clojure/clojure {:mvn/version "1.10.0-RC5"}
+        org.clojure/core.async {:mvn/version "0.4.490"}
         aleph {:mvn/version "0.4.6"}
         bidi {:mvn/version "2.1.4"}
-        yada {:mvn/version "1.2.14"}
-        environ {:mvn/version "1.0.0"}}
+        yada {:mvn/version "1.2.15"}}
  :aliases {:repl-test {:extra-deps {com.cognitect/transcriptor {:mvn/version "0.1.5"}}}}}

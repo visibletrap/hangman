@@ -1,6 +1,5 @@
 (ns hangman.web-handler
   (:require [bidi.bidi :refer [tag]]
-            [environ.core :refer [env]]
             [yada.yada :as yada :refer [listener resource as-resource]]
             [yada.resources.webjar-resource :refer [new-webjar-resource]]
             [hangman.web-game :as game]))
@@ -60,7 +59,7 @@
   (start))
 
 (defn -main [& [port]]
-  (let [port (Integer. (or port (env :port)))]
+  (let [port (Integer. (or port (System/getenv :port)))]
     (game/start)
     (start port)))
 
