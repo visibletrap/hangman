@@ -1,0 +1,26 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/clojure:tools-deps
+
+    working_directory: ~/hangman
+
+    environment:
+      JVM_OPTS: -Xmx512m
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          key: hangman-{{ checksum "deps.edn" }}
+
+      - run: clojure -A:repl-test -Sdescribe
+
+      - save_cache:
+          paths:
+            - ~/.m2
+            - ~/hangman/.cpcache
+          key: hangman-{{ checksum "deps.edn" }}
+
+      - run: clojure -A:repl-test test/hangman/repl_test.clj
